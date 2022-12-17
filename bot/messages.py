@@ -31,8 +31,8 @@ class TelegramNotification:
     This class describes the functionality for working with notifications in Telegram.
     """
 
-    def __init__(self, has_mailing: str = 'subscribed') -> None:
-        self.has_mailing = has_mailing
+    def __init__(self, addressee: str = 'subscribed') -> None:
+        self.addressee = addressee
 
     # TODO refactoring https://github.com/python-telegram-bot/python-telegram-bot/wiki/Avoiding-flood-limits
     def send_notification(self, message):
@@ -43,19 +43,19 @@ class TelegramNotification:
         :param telegram_chats: Users query
         :return:
         """
-        if self.has_mailing not in ('all', 'subscribed', 'unsubscribed'):
+        if self.addressee not in ('all', 'subscribed', 'unsubscribed'):
             return False
 
         chats_list = []
         query = db_session.query(User.telegram_id).filter(User.banned.is_(False))
 
-        if self.has_mailing == 'subscribed':
-            chats_list = query.filter(User.has_mailing.is_(True))
+        if self.addressee == 'subscribed':
+            chats_list = query.filter(User.addressee.is_(True))
 
-        if self.has_mailing == 'unsubscribed':
-            chats_list = query.filter(User.has_mailing.is_(False))
+        if self.addressee == 'unsubscribed':
+            chats_list = query.filter(User.addressee.is_(False))
 
-        if self.has_mailing == 'all':
+        if self.addressee == 'all':
             chats_list = query
 
         user_notification_context = SendUserNotificationsContext([])
@@ -94,7 +94,7 @@ class TelegramNotification:
                     time.sleep(i)
             except Unauthorized as ex:
                 logger.error(f'{str(ex.message)}: {user_message_context.telegram_id}')
-                User.query.filter_by(telegram_id=user_message_context.telegram_id).update({'banned': True, 'has_mailing': False})
+                User.query.filter_by(telegram_id=user_message_context.telegram_id).update({'banned': True, 'addressee': False})
                 db_session.commit()
 
     @staticmethod

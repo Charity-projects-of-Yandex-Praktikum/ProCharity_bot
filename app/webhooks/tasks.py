@@ -128,7 +128,7 @@ class CreateTasks(MethodResource, Resource):
             message=display_task_notification(task)
             user_notification_context = SendUserNotificationsContext([])
             for user in users:
-                if user.has_mailing:
+                if user.addressee:
                     user_message_context = SendUserMessageContext(message=message, telegram_id=user.telegram_id)
                     user_notification_context.user_message_context.append(user_message_context)
             logger.info(f"Tasks: User's mailing list - {[user_message_context.telegram_id for user_message_context in user_notification_context.user_message_context]}")

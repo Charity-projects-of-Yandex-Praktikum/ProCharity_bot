@@ -56,7 +56,7 @@ class User(Base):
     external_id = Column(Integer, unique=True, nullable=True)
     first_name = Column(String(64), nullable=True)
     last_name = Column(String(64), nullable=True)
-    has_mailing = Column(Boolean, default=False)
+    addressee = Column(Boolean, default=False)
     date_registration = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=False)
     external_signup_date = Column(TIMESTAMP, nullable=True)
     banned = Column(Boolean, server_default=expression.false(), nullable=False)

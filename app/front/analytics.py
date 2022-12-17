@@ -55,9 +55,9 @@ class Analytics(MethodResource, Resource):
 
 
 def get_number_users_statistic():
-    users = db_session.query(User.has_mailing, User.banned).all()
+    users = db_session.query(User.addressee, User.banned).all()
     number_users = len(users)
-    # user[0] - has_mailing, user[1] - banned
+    # user[0] - addressee, user[1] - banned
     subscribed_users = len([user for user in users if user[0] and not user[1]])
     not_subscribed_users = len([user for user in users if not user[0] and not user[1]])
     banned_users = len([user for user in users if user[1]])
@@ -126,7 +126,7 @@ def get_statistic_by_days_with_filtration(date_begin, column_name: Column, secon
 
 
 def users_activity_statistic(date_begin, column_name: Column, second_column_name: Column = None):
-    users = db_session.query(User.telegram_id, User.has_mailing).all()
+    users = db_session.query(User.telegram_id, User.addressee).all()
     subscribed_users_ids = [user[0] for user in users if user[1] is True]
     unsubscribed_users_ids = [user[0] for user in users if user[1] is False]
 

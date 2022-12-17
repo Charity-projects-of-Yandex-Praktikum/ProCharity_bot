@@ -19,14 +19,14 @@ from bot.messages import TelegramNotification
 
 class TelegramNotificationSchema(Schema):
     message = fields.String(required=True)
-    has_mailing = fields.String(required=True)
+    addressee = fields.String(required=True)
 
 
 class SendTelegramNotification(Resource, MethodResource):
 
     @doc(description='Sends message to the Telegram chat. Requires "message" parameter.'
                      ' Messages can be sent either to subscribed users or not.To do this,'
-                     ' specify the "has_mailing" parameter.Default value "True".',
+                     ' specify the "addressee" parameter.Default value "True".',
          summary='Send messages to the bot chat',
          tags=['Messages'],
          responses={
@@ -40,7 +40,7 @@ class SendTelegramNotification(Resource, MethodResource):
                  'type': 'string',
                  'required': True
              },
-             'has_mailing': {
+             'addressee': {
                  'description': ('Sending notifications to users by the type of permission to mailing.'
                                  'subscribed - user has enabled a mailing.'
                                  'unsubscribed - user has disabled a mailing.'
@@ -56,22 +56,22 @@ class SendTelegramNotification(Resource, MethodResource):
     @jwt_required()
     def post(self, **kwargs):
         message = kwargs.get('message').replace('&nbsp;', '')
-        has_mailing = kwargs.get('has_mailing')
+        addressee = kwargs.get('addressee')
 
-        if not message or not has_mailing:
-            logger.info("Messages: The <message> and  <has_mailing> parameters have not been passed")
-            return make_response(jsonify(result="Необходимо указать параметры <message> и <has_mailing>."), 400)
+        if not message or not addressee:
+            logger.info("Messages: The <message> and  <addressee> parameters have not been passed")
+            return make_response(jsonify(result="Необходимо указать параметры <message> и <addressee>."), 400)
 
         authorized_user = get_jwt_identity()
         message = Notification(message=message, sent_by=authorized_user)
         db_session.add(message)
         try:
             db_session.commit()
-            job_queue = TelegramNotification(has_mailing)
+            job_queue = TelegramNotification(addressee)
 
             if not job_queue.send_notification(message=message.message):
-                logger.info(f"Messages: Passed invalid <has_mailing> parameter. Passed: {has_mailing}")
-                return make_response(jsonify(result=f"Неверно указан параметр <has_mailing>. "
+                logger.info(f"Messages: Passed invalid <addressee> parameter. Passed: {addressee}")
+                return make_response(jsonify(result=f"Неверно указан параметр <addressee>. "
                                                     f"Сообщение не отправлено."), 400)
 
             message.was_sent = True

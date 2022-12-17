@@ -16,7 +16,7 @@ USERS_SCHEMA = {
                              "first_name": "First Name",
                              "last_name": "Last Name",
                              "telegram_id": 000000000,
-                             "has_mailing": 'true',
+                             "addressee": 'true',
                              "date_registration": "Sat, 26 Jun 2021 18:29:41 GMT"
                              }
                         ]

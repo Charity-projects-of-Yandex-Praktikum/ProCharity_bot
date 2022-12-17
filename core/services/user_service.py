@@ -125,18 +125,18 @@ class UserService:
         :param telegram_id: Chat id of current user from the telegram update obj.
         :return:
         """
-        user = User.query.options(load_only('has_mailing')).filter_by(telegram_id=telegram_id).first()
+        user = User.query.options(load_only('addressee')).filter_by(telegram_id=telegram_id).first()
 
-        if user.has_mailing:
-            user.has_mailing = False
+        if user.addressee:
+            user.addressee = False
         else:
-            user.has_mailing = True
+            user.addressee = True
         try:
             db_session.commit()
         except SQLAlchemyError as ex:
             logger.error(f"User DB - 'change_subscription' method: {str(ex)}")
 
-        return user.has_mailing
+        return user.addressee
 
     def change_user_category(self, telegram_id, category_id):
         user = User.query.filter_by(telegram_id=telegram_id).first()
@@ -180,22 +180,22 @@ class UserService:
             return False
 
     def set_user_unsubscribed(self, telegram_id):
-        user = User.query.options(load_only('has_mailing')).filter_by(telegram_id=telegram_id).first()
+        user = User.query.options(load_only('addressee')).filter_by(telegram_id=telegram_id).first()
         try:
-            user.has_mailing = False
+            user.addressee = False
             db_session.commit()
         except SQLAlchemyError as ex:
             logger.error(f"User DB - 'set_user_unsubscribed' method: {str(ex)}")
-        return user.has_mailing
+        return user.addressee
 
     def set_user_subscribed(self, telegram_id):
-        user = User.query.options(load_only('has_mailing')).filter_by(telegram_id=telegram_id).first()
+        user = User.query.options(load_only('addressee')).filter_by(telegram_id=telegram_id).first()
         try:
-            user.has_mailing = True
+            user.addressee = True
             db_session.commit()
         except SQLAlchemyError as ex:
             logger.error(f"User DB - 'set_user_subscribed' method: {str(ex)}")
-        return user.has_mailing
+        return user.addressee
 
     def archive_reason_cancelling(self, telegram_id):
         ReasonCanceling.query.filter_by(telegram_id=telegram_id).filter_by(
