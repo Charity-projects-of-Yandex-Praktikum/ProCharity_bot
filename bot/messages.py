@@ -31,33 +31,27 @@ class TelegramNotification:
     """
     This class describes the functionality for working with notifications in Telegram.
     """
-
-    def __init__(self, sub_status: str = 'subscribed') -> None:
-        self.sub_status = sub_status
-
-    # TODO refactoring https://github.com/python-telegram-bot/python-telegram-bot/wiki/Avoiding-flood-limits
-    def send_notification(self, message):
+    def send_notification(self, mailing_type, message):
         """
            Adds queue to send notification to telegram chats.
-
+        :param mailing_type: Type of subscription
         :param message: Message to add to the sending queue
-        :param telegram_chats: Users query
         :return:
         """
         values = [member.value for member in MailingType]
-        if self.sub_status not in values:
+        if mailing_type not in values:
             return False
 
         chats_list = []
         query = db_session.query(User.telegram_id).filter(User.banned.is_(False))
 
-        if self.sub_status == MailingType.SUBSCRIBED.value:
+        if mailing_type == MailingType.SUBSCRIBED.value:
             chats_list = query.filter(User.has_mailing.is_(True))
 
-        if self.sub_status == MailingType.UNSUBSCRIBED.value:
+        if mailing_type == MailingType.UNSUBSCRIBED.value:
             chats_list = query.filter(User.has_mailing.is_(False))
 
-        if self.sub_status == MailingType.ALL.value:
+        if mailing_type == MailingType.ALL.value:
             chats_list = query
 
         user_notification_context = SendUserNotificationsContext([])
