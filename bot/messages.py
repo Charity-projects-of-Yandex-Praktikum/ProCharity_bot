@@ -38,20 +38,16 @@ class TelegramNotification:
         :param message: Message to add to the sending queue
         :return:
         """
-        values = [member.value for member in MailingType]
-        if mailing_type not in values:
-            return False
-
         chats_list = []
         query = db_session.query(User.telegram_id).filter(User.banned.is_(False))
 
-        if mailing_type == MailingType.SUBSCRIBED.value:
+        if mailing_type == MailingType.subscribed.value:
             chats_list = query.filter(User.has_mailing.is_(True))
 
-        if mailing_type == MailingType.UNSUBSCRIBED.value:
+        if mailing_type == MailingType.unsubscribed.value:
             chats_list = query.filter(User.has_mailing.is_(False))
 
-        if mailing_type == MailingType.ALL.value:
+        if mailing_type == MailingType.all.value:
             chats_list = query
 
         user_notification_context = SendUserNotificationsContext([])

@@ -1,10 +1,16 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
-class MailingType(Enum):
+class MailingType(str, Enum):
     """
     This class implements enumeration.
     """
-    SUBSCRIBED = 'subscribed'
-    UNSUBSCRIBED = 'unsubscribed'
-    ALL = 'all'
+    subscribed = 'subscribed'
+    unsubscribed = 'unsubscribed'
+    all = 'all'
+
+
+class MailingNumber(IntEnum):
+    subscribed = 1
+    unsubscribed = 2
+    all = 3
