@@ -127,16 +127,15 @@ class UserService:
         """
         user = User.query.options(load_only('has_mailing')).filter_by(telegram_id=telegram_id).first()
 
-        if user.has_mailing:
-            user.has_mailing = False
-        else:
-            user.has_mailing = True
         try:
+            user.has_mailing = not user.has_mailing
             db_session.commit()
+            logger.info("Subscription: Status successfully changed.")
+            return user.has_mailing
         except SQLAlchemyError as ex:
             logger.error(f"User DB - 'change_subscription' method: {str(ex)}")
-
-        return user.has_mailing
+            db_session.rollback()
+            return user.has_mailing
 
     def change_user_category(self, telegram_id, category_id):
         user = User.query.filter_by(telegram_id=telegram_id).first()

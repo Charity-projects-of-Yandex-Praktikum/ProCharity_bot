@@ -1,28 +1,25 @@
 import datetime
 
-from flask import jsonify, make_response
-from flask_apispec import doc, use_kwargs
+from flask import jsonify, make_response, request
+from flask_apispec import doc
 from flask_apispec.views import MethodResource
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_restful import Resource
-from marshmallow import fields, Schema
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import config
 from app.database import db_session
 from app.logger import app_logger as logger
 from app.models import Notification
+from app.request_models.telegram_notification import TelegramNotificationRequest
+from app.webhooks.check_request import request_to_context
+from app.webhooks.check_webhooks_token import check_webhooks_token
 
 from bot.messages import TelegramNotification
 
 
-
-class TelegramNotificationSchema(Schema):
-    message = fields.String(required=True)
-    has_mailing = fields.String(required=True)
-
-
 class SendTelegramNotification(Resource, MethodResource):
+    method_decorators = {'post': [check_webhooks_token]}
 
     @doc(description='Sends message to the Telegram chat. Requires "message" parameter.'
                      ' Messages can be sent either to subscribed users or not.To do this,'
@@ -52,27 +49,17 @@ class SendTelegramNotification(Resource, MethodResource):
              'Authorization': config.PARAM_HEADER_AUTH,  # Only if request requires authorization
          }
          )
-    @use_kwargs(TelegramNotificationSchema)
     @jwt_required()
-    def post(self, **kwargs):
-        message = kwargs.get('message').replace('&nbsp;', '')
-        has_mailing = kwargs.get('has_mailing')
-
-        if not message or not has_mailing:
-            logger.info("Messages: The <message> and  <has_mailing> parameters have not been passed")
-            return make_response(jsonify(result="Необходимо указать параметры <message> и <has_mailing>."), 400)
-
+    def post(self):
+        notifications = request_to_context(TelegramNotificationRequest, request)
         authorized_user = get_jwt_identity()
-        message = Notification(message=message, sent_by=authorized_user)
+        message = Notification(message=notifications['message'], sent_by=authorized_user)
         db_session.add(message)
+
         try:
             db_session.commit()
-            job_queue = TelegramNotification(has_mailing)
-
-            if not job_queue.send_notification(message=message.message):
-                logger.info(f"Messages: Passed invalid <has_mailing> parameter. Passed: {has_mailing}")
-                return make_response(jsonify(result=f"Неверно указан параметр <has_mailing>. "
-                                                    f"Сообщение не отправлено."), 400)
+            notifier = TelegramNotification()
+            notifier.send_notification(mailing_type=notifications, message=message.message)
 
             message.was_sent = True
             message.sent_date = datetime.datetime.now()
