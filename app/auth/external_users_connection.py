@@ -19,7 +19,7 @@ class UserConnectionSchema(Schema):
 
 class ExternalUserConnection(Resource, MethodResource):
 
-    @doc(description='Set external_id to user by his telegrma_id.'
+    @doc(description='Set external_id to user by his telegram_id.'
                      'Requires "telegram_id" and "external_id" parameters.',
          summary='Set external_id to user',
          tags=['User Registration'],
