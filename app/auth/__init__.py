@@ -5,6 +5,7 @@ from flask_restful import Api
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/api/v1/auth')
 auth_api = Api(auth_bp)
 
+from . import external_users_connection
 from . import external_users_registration
 from . import login
 from . import password_reset_confirm
@@ -15,6 +16,8 @@ from . import send_registration_invite
 from . import token_checker
 
 
+auth_api.add_resource(external_users_connection.ExternalUserConnection,
+                      '/external_user_connection/')
 auth_api.add_resource(external_users_registration.ExternalUserRegistration,
                       '/external_user_registration/')
 auth_api.add_resource(login.Login, '/login/')
