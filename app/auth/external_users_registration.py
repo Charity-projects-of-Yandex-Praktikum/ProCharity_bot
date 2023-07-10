@@ -34,13 +34,14 @@ class ExternalUserRegistration(MethodResource, Resource):
     @use_kwargs(
         {'id': fields.Int(required=True),
          'id_hash': fields.Str(description='md5 hash of external_id', required=True),
+         'user_id': fields.Int(required=True),
          'first_name': fields.Str(required=True),
          'last_name': fields.Str(required=True),
          'email': fields.Str(required=True),
          'specializations': fields.Str(required=True)}
     )
     def post(self, **kwargs):
-        external_id = kwargs.get('id')
+        external_id = kwargs.get('user_id')
 
         user = ExternalSiteUser.query.options(load_only('external_id')).filter_by(external_id=external_id).first()
         if user:
