@@ -64,7 +64,7 @@ class ExternalUserRegistration(MethodResource, Resource):
         categories = []
 
         for specialization in specializations:
-            user.categories.append(specialization.name)
+            categories.append(specialization.name)
 
         try:
             db_session.commit()
