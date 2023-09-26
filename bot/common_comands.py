@@ -2,8 +2,9 @@ from telegram import (Update,
                       InlineKeyboardMarkup,
                       ParseMode)
 from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler
-
 from telegram import InlineKeyboardButton
+
+from app import config
 from bot.constants import states
 from bot.constants import command_constants
 from bot.constants import constants
@@ -12,6 +13,7 @@ from bot.decorators.logger import log_command
 from core.repositories.user_repository import UserRepository
 from core.services.user_service import UserService
 from app.database import db_session
+
 
 MENU_BUTTONS = [
     [
@@ -61,12 +63,14 @@ def start(update: Update, context: CallbackContext) -> int:
     callback_data = (command_constants.COMMAND__GREETING_REGISTERED_USER
                      if user.categories
                      else command_constants.COMMAND__GREETING)
-    button = [
-        [
-            InlineKeyboardButton(text='Начнем', callback_data=callback_data)
-        ]
+    buttons = [
+        [InlineKeyboardButton(text='Начнем', callback_data=callback_data)],
+        [InlineKeyboardButton(
+            text='Связать аккаунт с ботом',
+            url=f'{config.URL_PROCHARITY}/auth/bot_procharity.php?user_id={user.external_id}&telegram_id={user.telegram_id}'
+        )]
     ]
-    keyboard = InlineKeyboardMarkup(button)
+    keyboard = InlineKeyboardMarkup(buttons)
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text='Привет! 👋 \n\n'

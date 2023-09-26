@@ -32,7 +32,7 @@ def add_handler(path_name):
 
 def app_logging():
     module_logger = logging.getLogger('app')
-    module_logger.setLevel(logging.INFO)
+    module_logger.setLevel(logging.DEBUG)
     app_handler = add_handler('app_logs.txt')
     app_loggers = [
         module_logger,
@@ -47,7 +47,7 @@ def app_logging():
 
 def bot_logging():
     bot_logger = logging.getLogger("telegram")
-    bot_logger.setLevel(logging.INFO)
+    bot_logger.setLevel(logging.DEBUG)
     bot_handler = add_handler('bot_logs.txt')
     bot_logger.addHandler(bot_handler)
     app_loggers = [
@@ -63,7 +63,7 @@ def bot_logging():
 
 def webhooks_logging():
     webhooks_logger = logging.getLogger("webhooks")
-    webhooks_logger.setLevel(logging.INFO)
+    webhooks_logger.setLevel(logging.DEBUG)
     webhooks_handler = add_handler('webhooks_logs.txt')
     webhooks_logger.addHandler(webhooks_handler)
 
