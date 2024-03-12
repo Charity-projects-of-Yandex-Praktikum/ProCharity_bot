@@ -17,6 +17,9 @@ from app.webhooks.check_webhooks_token import check_webhooks_token
 from bot.charity_bot import dispatcher
 from bot.formatter import display_task_notification
 from bot.messages import TelegramNotification, SendUserMessageContext, SendUserNotificationsContext
+from core.repositories.task_repository import TaskRepository
+
+task_repository = TaskRepository(db_session)
 
 
 class CreateTasks(MethodResource, Resource):
@@ -39,32 +42,40 @@ class CreateTasks(MethodResource, Resource):
     def post(self):
         tasks = request_to_context(TaskCreateRequest, request)
 
+        tasks_active_db = task_repository.get_active_tasks()
+        id_tasks_active_db = [task.id for task in tasks_active_db]
         tasks_dict = {task.id: task for task in tasks}
-        tasks_db = Task.query.options(load_only('archive')).all()
         task_id_json = [task.id for task in tasks]
-        task_id_db = [task.id for task in tasks_db]
-
+        task_for_adding_db = []
+        task_update = []
         task_to_send = []
 
-        task_id_db_not_archive = [task.id for task in tasks_db if task.archive is False]
-        task_for_archive = list(set(task_id_db_not_archive) - set(task_id_json))
-        archive_records = [task for task in tasks_db if task.id in task_for_archive]
-        archived_tasks = self.__archive_tasks(archive_records)
+        def initialization_tasks(task_id_json):
+            for id_task in task_id_json:
+                task = task_repository.get_or_none(id_task)
+                if task:
+                    task_update.append(task)
+                else:
+                    task_for_adding_db.append(id_task)
 
-        task_id_db_archive = list(set(task_id_db) - set(task_id_db_not_archive))
-        task_for_unarchive = list(set(task_id_db_archive) & set(task_id_json))
-        unarchive_records = [task for task in tasks_db if task.id in task_for_unarchive]
-        unarchived_tasks = self.__unarchive_tasks(unarchive_records, task_to_send, tasks_dict)
+        initialization_tasks(task_id_json)
 
-        task_for_adding_db = list(set(task_id_json) - set(task_id_db))
-        tasks_to_add = [task for task in tasks if task.id in task_for_adding_db]
-        added_tasks = self.__add_tasks(tasks_to_add, task_to_send)
+        added_tasks = []
+        if task_for_adding_db:
+            tasks_to_add = [task for task in tasks if task.id in task_for_adding_db]
+            added_tasks = self.__add_tasks(tasks_to_add, task_to_send)
 
-        task_id_db_active = list(
-            set(task_id_json) - set(task_for_archive) - set(task_for_unarchive) - set(task_for_adding_db)
-        )
-        active_tasks = [task for task in tasks_db if task.id in task_id_db_active]       
-        updated_tasks = self.__update_active_tasks(active_tasks, task_to_send, tasks_dict)
+        updated_tasks = []
+        unarchived_tasks = []
+        if task_update:
+            updated_tasks = self.__update_tasks(task_update, task_to_send, tasks_dict)
+            unarchived_tasks = self.__unarchive_tasks(task_update, updated_tasks, task_to_send, id_tasks_active_db)
+
+        archived_tasks = []
+
+        if updated_tasks or added_tasks:
+            archive_records = [task for task in tasks_active_db if task not in task_update]
+            archived_tasks = self.__archive_tasks(archive_records)
 
         try:
             db_session.commit()
@@ -148,15 +159,16 @@ class CreateTasks(MethodResource, Resource):
         logger.info(f'Tasks: Archived task ids: {task_ids}')
         return task_ids
 
-    def __unarchive_tasks(self, unarchive_records, task_to_send, tasks_dict):
-        task_ids = [task.id for task in unarchive_records]
-        for task in unarchive_records:
-            task_from_dict = tasks_dict.get(task.id)
-            self.__update_task_fields(task, task_from_dict)
-            task_to_send.append(task)
-        logger.info(f'Tasks: Unarchived {len(unarchive_records)} tasks.')
-        logger.info(f'Tasks: Unarchived task IDs: {task_ids}')
-        return task_ids
+    def __unarchive_tasks(self, task_update, updated_tasks, task_to_send, id_tasks_active_db):
+        unarchived_tasks_ids = []
+        for updated_task in updated_tasks:
+            if updated_task not in id_tasks_active_db:
+                unarchived_tasks_ids.append(updated_task)
+        tasks_send = [task for task in task_update if task.id in unarchived_tasks_ids]
+        task_to_send.extend(tasks_send)
+        logger.info(f"Tasks: Unarchived {len(unarchived_tasks_ids)} tasks.")
+        logger.info(f"Tasks: Unarchived task IDs: {unarchived_tasks_ids}")
+        return unarchived_tasks_ids
 
     def __hash__(self, task):
         if type(task) == dict:
@@ -166,7 +178,7 @@ class CreateTasks(MethodResource, Resource):
             return hash(f'{title}{description}{deadline}')
         return hash(f'{task.title}{task.description}{task.deadline}')
 
-    def __update_active_tasks(self, active_tasks, task_to_send, tasks_dict):
+    def __update_tasks(self, active_tasks, task_to_send, tasks_dict):
         updated_task_ids = []
         for task in active_tasks:
             task_from_dict = tasks_dict.get(task.id)

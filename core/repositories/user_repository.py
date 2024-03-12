@@ -1,9 +1,8 @@
-from sqlalchemy.orm import Session
-
-from core.repositories.abstract_repository import AbstractRepository
 from typing import Optional
 
 from app.models import User
+from core.repositories.abstract_repository import AbstractRepository
+from sqlalchemy.orm import Session
 
 
 class UserRepository(AbstractRepository):
@@ -26,5 +25,8 @@ class UserRepository(AbstractRepository):
         self.session.refresh(user)
         return user
 
-    def update(self, user: User) -> None:
-        pass
+    def update(self, user: User) -> User:
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user
