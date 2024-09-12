@@ -24,13 +24,16 @@ user_db = UserService(user_repository)
 def start_task_subscription(update: Update, context: CallbackContext):
     context.user_data[states.SUBSCRIPTION_FLAG] = user_db.change_subscription(update.effective_user.id)
     user_db.archive_reason_cancelling(update.effective_user.id)
-    user_categories = [
-        category['name'] for category in user_db.get_categories(update.effective_user.id)
-        if category['user_selected']
-    ]
+    user_categories = ', '.join(
+        [category['name'] for category
+         in user_db.get_categories(update.effective_user.id)
+         if category['user_selected']]
+    )
+    if not user_categories:
+        user_categories = 'Категории ещё не выбраны'
     answer = f'Отлично! Теперь я буду присылать тебе уведомления о ' \
              f'новых заданиях в ' \
-             f'категориях: *{", ".join(user_categories)}*.\n\n' \
+             f'категориях: *{user_categories}*.\n\n' \
              f'А пока можешь посмотреть открытые задания.'
 
     update.callback_query.edit_message_text(
