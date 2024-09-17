@@ -7,13 +7,23 @@ from sqlalchemy import (Column,
                         Date,
                         BigInteger
                         )
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import expression, func
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 Base = declarative_base()
+
+# @as_declarative()
+# class Base:
+
+    # created_at = Column(TIMESTAMP, server_default=func.current_timestamp(), nullable=True)
+    # updated_at = Column(
+    #     TIMESTAMP, server_default=func.current_timestamp(), nullable=True, onupdate=func.current_timestamp()
+    # )
+    # __name__: str
 
 
 class AdminUser(Base):
